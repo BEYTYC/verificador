@@ -2,23 +2,15 @@ import { GoogleGenerativeAI, SchemaType } from "@google/generative-ai";
 
 const genAI = new GoogleGenerativeAI(import.meta.env.VITE_GEMINI_API_KEY || "");
 
-export interface VerificationResult {
-  item: string;
-  status: 'present' | 'missing' | 'incomplete';
-  foundValue: string;
-  observations: string;
-  pageRange?: string;
-}
-
 export interface AnalysisResponse {
   personName: string;
   academicProgram: string;
-  checklist: VerificationResult[];
+  checklist: any[];
   additionalDocuments: string[];
 }
 
 export async function analyzeGraduationDocuments(pdfBase64: string): Promise<AnalysisResponse> {
-  // CAMBIO AQUÍ: Usamos "gemini-1.5-flash-latest" que es la versión más estable
+  // Usamos gemini-1.5-flash-latest para evitar errores de versión
   const model = genAI.getGenerativeModel({
     model: "gemini-1.5-flash-latest",
     generationConfig: {
@@ -28,24 +20,8 @@ export async function analyzeGraduationDocuments(pdfBase64: string): Promise<Ana
         properties: {
           personName: { type: SchemaType.STRING },
           academicProgram: { type: SchemaType.STRING },
-          checklist: {
-            type: SchemaType.ARRAY,
-            items: {
-              type: SchemaType.OBJECT,
-              properties: {
-                item: { type: SchemaType.STRING },
-                status: { type: SchemaType.STRING, enum: ["present", "missing", "incomplete"] },
-                foundValue: { type: SchemaType.STRING },
-                observations: { type: SchemaType.STRING },
-                pageRange: { type: SchemaType.STRING }
-              },
-              required: ["item", "status", "foundValue", "observations"]
-            }
-          },
-          additionalDocuments: {
-            type: SchemaType.ARRAY,
-            items: { type: SchemaType.STRING }
-          }
+          checklist: { type: SchemaType.ARRAY, items: { type: SchemaType.OBJECT } },
+          additionalDocuments: { type: SchemaType.ARRAY, items: { type: SchemaType.STRING } }
         },
         required: ["personName", "academicProgram", "checklist", "additionalDocuments"]
       }
@@ -54,19 +30,12 @@ export async function analyzeGraduationDocuments(pdfBase64: string): Promise<Ana
 
   try {
     const result = await model.generateContent([
-      {
-        inlineData: {
-          mimeType: "application/pdf",
-          data: pdfBase64,
-        },
-      },
-      { text: "Analiza este documento de grado y extrae la información en el formato JSON especificado." },
+      { inlineData: { mimeType: "application/pdf", data: pdfBase64 } },
+      { text: "Analiza los documentos de grado." }
     ]);
-
-    const responseText = result.response.text();
-    return JSON.parse(responseText) as AnalysisResponse;
+    return JSON.parse(result.response.text());
   } catch (error) {
-    console.error("Error en Gemini:", error);
+    console.error("Error:", error);
     throw error;
   }
 }
