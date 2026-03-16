@@ -1,5 +1,6 @@
 import { GoogleGenerativeAI, SchemaType } from "@google/generative-ai";
 
+// Configuración correcta para Vite y Vercel
 const genAI = new GoogleGenerativeAI(import.meta.env.VITE_GEMINI_API_KEY || "");
 
 export interface VerificationResult {
@@ -59,11 +60,12 @@ export async function analyzeGraduationDocuments(pdfBase64: string): Promise<Ana
           data: pdfBase64,
         },
       },
-      { text: "Analiza los documentos de grado en este PDF." },
+      { text: "Analiza este documento de grado y extrae la información solicitada." },
     ]);
+
     return JSON.parse(result.response.text());
   } catch (error) {
-    console.error("Error:", error);
+    console.error("Gemini Error:", error);
     throw error;
   }
 }
