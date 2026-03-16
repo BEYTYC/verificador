@@ -1,6 +1,5 @@
 import { GoogleGenerativeAI, SchemaType } from "@google/generative-ai";
 
-// Usamos VITE_ para que sea compatible con el cliente
 const genAI = new GoogleGenerativeAI(import.meta.env.VITE_GEMINI_API_KEY || "");
 
 export interface VerificationResult {
@@ -60,12 +59,11 @@ export async function analyzeGraduationDocuments(pdfBase64: string): Promise<Ana
           data: pdfBase64,
         },
       },
-      { text: "Analiza este documento de grado según las reglas establecidas." },
+      { text: "Analiza los documentos de grado en este PDF." },
     ]);
-
     return JSON.parse(result.response.text());
   } catch (error) {
-    console.error("Gemini Analysis Error:", error);
+    console.error("Error:", error);
     throw error;
   }
 }
