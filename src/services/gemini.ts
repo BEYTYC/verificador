@@ -1,5 +1,6 @@
 import { GoogleGenerativeAI, SchemaType } from "@google/generative-ai";
 
+// Inicializamos con la API KEY
 const genAI = new GoogleGenerativeAI(import.meta.env.VITE_GEMINI_API_KEY || "");
 
 export interface AnalysisResponse {
@@ -10,22 +11,9 @@ export interface AnalysisResponse {
 }
 
 export async function analyzeGraduationDocuments(pdfBase64: string): Promise<AnalysisResponse> {
-  // El nombre "models/gemini-1.5-flash" es el formato oficial para evitar el error 404
+  // USAMOS EL NOMBRE EXACTO QUE GOOGLE PIDE AHORA
   const model = genAI.getGenerativeModel({
-    model: "models/gemini-1.5-flash", 
-    generationConfig: {
-      responseMimeType: "application/json",
-      responseSchema: {
-        type: SchemaType.OBJECT,
-        properties: {
-          personName: { type: SchemaType.STRING },
-          academicProgram: { type: SchemaType.STRING },
-          checklist: { type: SchemaType.ARRAY, items: { type: SchemaType.OBJECT } },
-          additionalDocuments: { type: SchemaType.ARRAY, items: { type: SchemaType.STRING } }
-        },
-        required: ["personName", "academicProgram", "checklist", "additionalDocuments"]
-      }
-    }
+    model: "gemini-1.5-flash", 
   });
 
   try {
@@ -36,12 +24,15 @@ export async function analyzeGraduationDocuments(pdfBase64: string): Promise<Ana
           data: pdfBase64,
         },
       },
-      { text: "Analiza este documento de grado y extrae la información solicitada." },
+      { text: "Analiza los documentos de grado en este PDF y devuelve un JSON con personName, academicProgram, checklist y additionalDocuments." },
     ]);
 
-    return JSON.parse(result.response.text());
+    const text = result.response.text();
+    // Limpiamos el texto por si viene con marcas de markdown ```json
+    const cleanJson = text.replace(/```json|```/g, "");
+    return JSON.parse(cleanJson);
   } catch (error) {
-    console.error("Error detallado de Gemini:", error);
+    console.error("Error en la llamada a Gemini:", error);
     throw error;
   }
 }
