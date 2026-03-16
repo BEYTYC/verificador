@@ -1,0 +1,76 @@
+@import "tailwindcss";
+
+@theme {
+  --color-brand: #001a3d;
+  --color-brand-light: #00d1ff;
+  --color-accent: #00d1ff;
+  --color-dark: #000b1a;
+  --color-box-light: #e6ecf2; /* Gris azuloso muy claro */
+  --color-portal-blue: #004bb4;
+}
+
+@utility bg-portal-gradient {
+  background-color: #001a3d;
+  background-image: 
+    linear-gradient(to bottom, #000000 0%, rgba(0, 26, 61, 0.9) 20%, var(--color-portal-blue) 100%),
+    url('https://www.transparenttextures.com/patterns/cubes.png'),
+    url('https://images.unsplash.com/photo-1523050335456-c38a89b7d560?auto=format&fit=crop&q=80&w=1920'),
+    radial-gradient(white, rgba(255,255,255,.1) 1px, transparent 20px),
+    radial-gradient(white, rgba(255,255,255,.05) 1px, transparent 15px);
+  background-size: cover, auto, cover, 400px 400px, 300px 300px;
+  background-position: center, center, center, 0 0, 40px 60px;
+  background-attachment: fixed;
+  background-blend-mode: normal, overlay, multiply, screen, screen;
+  animation: galaxy-drift 180s linear infinite;
+}
+
+@keyframes galaxy-drift {
+  from { background-position: center, center, 0 0, 40px 60px, 130px 270px, 70px 100px; }
+  to { background-position: center, center, 550px 550px, 390px 410px, 380px 820px, 220px 250px; }
+}
+
+@keyframes matrix-rain {
+  0% { transform: translateY(-100%); opacity: 0; }
+  10% { opacity: 0.3; }
+  90% { opacity: 0.3; }
+  100% { transform: translateY(100vh); opacity: 0; }
+}
+
+@utility matrix-column {
+  position: absolute;
+  top: -20%;
+  font-family: var(--font-mono);
+  font-size: 14px;
+  line-height: 1;
+  color: #00d1ff;
+  white-space: nowrap;
+  writing-mode: vertical-rl;
+  text-orientation: upright;
+  animation: matrix-rain 5s linear infinite;
+  text-shadow: 0 0 8px #00d1ff;
+  user-select: none;
+  pointer-events: none;
+}
+
+@keyframes sparkle {
+  0%, 100% { transform: scale(0); opacity: 0; }
+  50% { transform: scale(1); opacity: 1; }
+}
+
+@utility sparkle-dot {
+  position: absolute;
+  width: 2px;
+  height: 2px;
+  background: white;
+  border-radius: 50%;
+  box-shadow: 0 0 8px rgba(255, 255, 255, 0.8);
+  animation: sparkle 2s ease-in-out infinite;
+}
+
+@utility scrollbar-hide {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+  &::-webkit-scrollbar {
+    display: none;
+  }
+}

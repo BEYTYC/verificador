@@ -1,0 +1,5 @@
+{
+  "name": "Verificador de requisitos de grado",
+  "description": "Aplicación para verificar documentos de grado en un archivo PDF, validando requisitos específicos y consistencia de nombres.",
+  "requestFramePermissions": []
+}
