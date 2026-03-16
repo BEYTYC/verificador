@@ -1,9 +1,7 @@
-import { GoogleGenerativeAI } from "@google/generative-ai";
+import { GoogleGenerativeAI, SafetySetting, RespectfulContentSensation, HarmCategory, HarmBlockThreshold } from "@google/generative-ai";
 
-// Configuración de la IA usando la variable de entorno de Vite/Vercel
 const genAI = new GoogleGenerativeAI(import.meta.env.VITE_GEMINI_API_KEY || "");
 
-// Definimos la estructura que espera recibir tu App.tsx
 export interface VerificationItem {
   item: string;
   status: 'present' | 'missing';
@@ -18,45 +16,67 @@ export interface AnalysisResponse {
 }
 
 export async function analyzeGraduationDocuments(pdfBase64: string): Promise<AnalysisResponse> {
-  // CAMBIO: Se usa "latest" para evitar el error 404 de modelos retirados
+  // 1. Usamos la versión de modelo estable
   const model = genAI.getGenerativeModel({ 
-    model: "gemini-1.5-flash-latest",
-  });
+    model: "gemini-1.5-flash", // Si falla "latest", usa este
+  }, { apiVersion: 'v1beta' }); // Forzamos v1beta para mejor soporte de PDF
 
-  const prompt = `
-    Analiza este documento de requisitos de grado. 
-    Extrae la información y devuélvela estrictamente en este formato JSON:
+  // 2. Desactivamos filtros de seguridad que bloquean documentos oficiales por error
+  const safetySettings = [
     {
-      "personName": "NOMBRE COMPLETO DEL ESTUDIANTE",
-      "academicProgram": "NOMBRE DEL PROGRAMA O CARRERA",
-      "checklist": [
-        { "item": "Nombre del requisito", "status": "present o missing", "pageRange": "rango de páginas o N/A" }
-      ],
-      "additionalDocuments": ["lista de otros documentos encontrados"]
-    }
-    Responde ÚNICAMENTE el objeto JSON, sin texto adicional ni bloques de código markdown.
-  `;
+      category: HarmCategory.HARM_CATEGORY_HARASSMENT,
+      threshold: HarmBlockThreshold.BLOCK_NONE,
+    },
+    {
+      category: HarmCategory.HARM_CATEGORY_HATE_SPEECH,
+      threshold: HarmBlockThreshold.BLOCK_NONE,
+    },
+    {
+      category: HarmCategory.HARM_CATEGORY_SEXUALLY_EXPLICIT,
+      threshold: HarmBlockThreshold.BLOCK_NONE,
+    },
+    {
+      category: HarmCategory.HARM_CATEGORY_DANGEROUS_CONTENT,
+      threshold: HarmBlockThreshold.BLOCK_NONE,
+    },
+  ];
+
+  const prompt = `Analiza este documento de grado. 
+    Responde ÚNICAMENTE con un objeto JSON que tenga esta estructura exacta:
+    {
+      "personName": "Nombre completo",
+      "academicProgram": "Programa",
+      "checklist": [{ "item": "Nombre", "status": "present", "pageRange": "1" }],
+      "additionalDocuments": []
+    }`;
 
   try {
-    const result = await model.generateContent([
-      {
-        inlineData: {
-          mimeType: "application/pdf",
-          data: pdfBase64,
-        },
-      },
-      { text: prompt },
-    ]);
+    const result = await model.generateContent({
+      contents: [{
+        role: 'user',
+        parts: [
+          { inlineData: { mimeType: "application/pdf", data: pdfBase64 } },
+          { text: prompt }
+        ]
+      }],
+      safetySettings
+    });
 
     const response = await result.response;
     let text = response.text();
     
-    // Limpieza robusta del texto por si la IA devuelve ```json ... ```
-    text = text.replace(/```json/g, "").replace(/```/g, "").trim();
+    // 3. Extracción robusta: Buscamos el primer '{' y el último '}' 
+    // por si Gemini escribe texto extra.
+    const startIdx = text.indexOf('{');
+    const endIdx = text.lastIndexOf('}');
     
-    const parsedResponse = JSON.parse(text);
+    if (startIdx === -1 || endIdx === -1) {
+      throw new Error("La IA no devolvió un JSON válido");
+    }
+    
+    const jsonString = text.substring(startIdx, endIdx + 1);
+    const parsedResponse = JSON.parse(jsonString);
 
-    // Aseguramos que los campos existan para evitar errores en el Frontend
     return {
       personName: parsedResponse.personName || "No detectado",
       academicProgram: parsedResponse.academicProgram || "No detectado",
@@ -64,8 +84,14 @@ export async function analyzeGraduationDocuments(pdfBase64: string): Promise<Ana
       additionalDocuments: parsedResponse.additionalDocuments || []
     };
 
-  } catch (error) {
-    console.error("Error detallado en el servicio Gemini:", error);
-    throw new Error("No se pudo procesar el documento con la IA.");
+  } catch (error: any) {
+    console.error("Error completo de Gemini:", error);
+    
+    // Si el error es por cuota (muchos archivos seguidos)
+    if (error.message?.includes('429')) {
+      throw new Error("Límite de mensajes agotado. Espera un minuto.");
+    }
+    
+    throw new Error("Error al analizar el PDF.");
   }
 }
