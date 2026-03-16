@@ -104,4 +104,128 @@ export default function App() {
         zip.file(f.file.name, f.file);
       }
     }
-    const content = await zip.gener
+    const content = await zip.generateAsync({ type: 'blob' });
+    const link = document.createElement('a');
+    link.href = URL.createObjectURL(content);
+    link.download = "REQUISITOS_GRADO.zip";
+    link.click();
+    setIsDownloadingZip(false);
+  };
+
+  const selectedFile = files.find(f => f.id === selectedId);
+
+  return (
+    <div className="min-h-screen bg-[#001f3f] text-white flex flex-col">
+      <header className="bg-[#003366] border-b border-cyan-500/30 h-20 flex items-center px-6 sticky top-0 z-50">
+        <div className="max-w-7xl mx-auto w-full flex items-center justify-between">
+          <div className="flex items-center gap-4">
+            <img src={LOGO_ESCUELA_NAVAL} alt="Logo" className="h-12" />
+            <h1 className="text-xl font-black uppercase italic tracking-tight">Verificador de Requisitos</h1>
+          </div>
+          <nav className="flex gap-6">
+            <button onClick={() => setActiveView('individual')} className={`text-xs font-bold uppercase ${activeView === 'individual' ? 'text-cyan-400 border-b' : ''}`}>Individuales</button>
+            <button onClick={() => setActiveView('summary')} className={`text-xs font-bold uppercase ${activeView === 'summary' ? 'text-cyan-400 border-b' : ''}`}>Resumen</button>
+          </nav>
+          <button className="bg-cyan-500 text-[#003366] px-6 py-2 rounded-full font-bold text-xs">Portal</button>
+        </div>
+      </header>
+
+      <main className="flex-1 p-6 max-w-7xl mx-auto w-full grid grid-cols-12 gap-6">
+        {activeView === 'individual' ? (
+          <>
+            <aside className="col-span-3 bg-slate-800/50 rounded-2xl p-4 flex flex-col gap-4 border border-slate-700">
+              <div className="flex justify-between items-center border-b border-slate-700 pb-2">
+                <span className="text-[10px] font-bold text-slate-400">ARCHIVOS ({files.length})</span>
+                <button onClick={() => fileInputRef.current?.click()} className="text-cyan-400"><Plus size={16}/></button>
+              </div>
+              <input type="file" ref={fileInputRef} onChange={handleFileChange} multiple className="hidden" accept=".pdf" />
+              <div className="flex-1 overflow-y-auto space-y-1">
+                {files.map(f => (
+                  <div key={f.id} onClick={() => setSelectedId(f.id)} className={`p-2 rounded-lg cursor-pointer text-[10px] font-bold uppercase border ${selectedId === f.id ? 'bg-cyan-500/20 border-cyan-500' : 'border-transparent'}`}>
+                    {f.studentName}
+                  </div>
+                ))}
+              </div>
+              <button onClick={analyzeAll} disabled={isBatchProcessing} className="bg-cyan-500 text-[#003366] py-3 rounded-xl font-bold text-xs uppercase">Analizar Todo</button>
+            </aside>
+
+            <section className="col-span-9">
+              {!selectedFile ? (
+                <div className="h-full flex flex-col items-center justify-center border-2 border-dashed border-slate-700 rounded-3xl text-slate-500">
+                  <Upload size={40} />
+                  <p className="mt-2 font-bold">Cargue documentos para empezar</p>
+                </div>
+              ) : selectedFile.loading ? (
+                <div className="h-full flex flex-col items-center justify-center">
+                  <Loader2 className="animate-spin text-cyan-500" size={40} />
+                </div>
+              ) : (
+                <div className="bg-white rounded-3xl p-8 text-slate-800 shadow-2xl">
+                  <div className="mb-6">
+                    <p className="text-[10px] font-bold text-cyan-600 uppercase">Programa</p>
+                    <h2 className="text-2xl font-black text-[#003366] uppercase">{selectedFile.result?.academicProgram || 'PENDIENTE'}</h2>
+                    <p className="text-sm font-bold text-slate-500">Estudiante: {selectedFile.result?.personName || selectedFile.studentName}</p>
+                  </div>
+                  <div className="border rounded-2xl overflow-hidden">
+                    <table className="w-full text-left">
+                      <thead className="bg-slate-50 text-[10px] font-bold text-slate-400 uppercase">
+                        <tr>
+                          <th className="px-6 py-3">Requisito</th>
+                          <th className="px-6 py-3">Estado</th>
+                          <th className="px-6 py-3">Páginas</th>
+                        </tr>
+                      </thead>
+                      <tbody className="divide-y text-xs uppercase font-bold text-slate-700">
+                        {selectedFile.result?.checklist.map((item, i) => (
+                          <tr key={i}>
+                            <td className="px-6 py-4">{item.item}</td>
+                            <td className="px-6 py-4">
+                              <span className={`px-3 py-1 rounded-full text-[10px] ${item.status === 'present' ? 'bg-green-100 text-green-600' : 'bg-red-100 text-red-600'}`}>
+                                {item.status === 'present' ? 'COMPLETO' : 'FALTANTE'}
+                              </span>
+                            </td>
+                            <td className="px-6 py-4 text-slate-400">{item.pageRange}</td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+              )}
+            </section>
+          </>
+        ) : (
+          <div className="col-span-12 bg-white rounded-3xl overflow-hidden shadow-2xl">
+            <div className="p-6 border-b flex justify-between items-center text-[#003366]">
+              <h3 className="font-black uppercase tracking-tighter">Resumen General</h3>
+              <button onClick={downloadAllZip} className="bg-cyan-500 text-white px-6 py-2 rounded-xl text-xs font-bold flex items-center gap-2">
+                <Archive size={16}/> Descargar ZIP
+              </button>
+            </div>
+            <table className="w-full text-left">
+              <thead className="bg-slate-50 text-[10px] font-bold text-slate-400 uppercase">
+                <tr><th className="px-8 py-4">Programa</th><th className="px-8 py-4">Estudiante</th><th className="px-8 py-4">Novedades</th></tr>
+              </thead>
+              <tbody className="divide-y text-slate-700 uppercase font-bold text-[11px]">
+                {files.map(f => (
+                  <tr key={f.id}>
+                    <td className="px-8 py-4 text-slate-400">{f.result?.academicProgram || 'PENDIENTE'}</td>
+                    <td className="px-8 py-4 text-[#003366]">{f.result?.personName || f.studentName}</td>
+                    <td className="px-8 py-4">
+                      <span className={`px-4 py-1 rounded-full text-[10px] ${f.result ? 'bg-green-100 text-green-600' : 'bg-orange-100 text-orange-600'}`}>
+                        {f.result ? 'PROCESADO' : 'PENDIENTE'}
+                      </span>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
+      </main>
+      <footer className="p-6 text-center text-[10px] text-slate-500 uppercase tracking-widest">
+        Copyright 2026 Oficina de Estadística - Escuela Naval de Cadetes "Almirante Padilla"
+      </footer>
+    </div>
+  );
+}
