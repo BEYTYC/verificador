@@ -20,9 +20,10 @@ export interface AnalysisResponse {
 }
 
 export async function analyzeGraduationDocuments(pdfBase64: string): Promise<AnalysisResponse> {
-  // Configuración del modelo con esquema JSON estricto
+  // CAMBIO CLAVE: Usamos "gemini-1.5-flash" o "gemini-2.0-flash" (el más actual en 2026)
+  // Quitar el "-latest" suele solucionar el error 404 en el endpoint v1beta
   const model = genAI.getGenerativeModel({
-    model: "gemini-1.5-flash-latest",
+    model: "gemini-1.5-flash", 
     generationConfig: {
       responseMimeType: "application/json",
       responseSchema: {
@@ -100,7 +101,11 @@ INSTRUCCIONES CRÍTICAS:
   } catch (error: any) {
     console.error("Error en el servicio Gemini:", error);
     
-    // Manejo de errores amigable para la interfaz
+    // Si sigue saliendo 404, el modelo podría haberse actualizado a 2.0
+    if (error.message?.includes("404")) {
+        throw new Error("Error 404: El modelo solicitado no existe. Intenta cambiar 'gemini-1.5-flash' por 'gemini-2.0-flash' en el código.");
+    }
+
     throw new Error(
       error.message?.includes("403") 
         ? "Error 403: API Key inválida o no configurada en Vercel." 
