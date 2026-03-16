@@ -1,10 +1,13 @@
 import { GoogleGenerativeAI } from "@google/generative-ai";
 
+// Forzamos el uso de la API Key desde las variables de Vite/Vercel
 const genAI = new GoogleGenerativeAI(import.meta.env.VITE_GEMINI_API_KEY || "");
 
 export async function analyzeGraduationDocuments(pdfBase64: string) {
-  // Probamos con la versión más compatible para llaves gratuitas
-  const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
+  // Usamos el nombre del modelo que Google acepta en todas las regiones ahora
+  const model = genAI.getGenerativeModel({ 
+    model: "gemini-1.5-flash",
+  });
 
   try {
     const result = await model.generateContent([
@@ -14,14 +17,14 @@ export async function analyzeGraduationDocuments(pdfBase64: string) {
           data: pdfBase64,
         },
       },
-      { text: "Analiza este PDF y devuelve un resumen en JSON." },
+      { text: "Analiza este documento de grado. Extrae el nombre del estudiante, programa y los rangos de páginas de cada requisito. Responde solo con un objeto JSON válido." },
     ]);
 
     const response = await result.response;
-    return JSON.parse(response.text().replace(/```json|```/g, ""));
-  } catch (error: any) {
-    console.error("Error completo:", error);
-    // Si sale error 404 aquí, intenta crear una NUEVA llave en AI Studio
+    const text = response.text().replace(/```json|```/g, "").trim();
+    return JSON.parse(text);
+  } catch (error) {
+    console.error("Error en Gemini:", error);
     throw error;
   }
 }
