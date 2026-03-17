@@ -1,6 +1,5 @@
 import { GoogleGenerativeAI, SchemaType } from "@google/generative-ai";
 
-// En Vite se debe usar import.meta.env y el prefijo VITE_
 const API_KEY = import.meta.env.VITE_GEMINI_API_KEY || "";
 const genAI = new GoogleGenerativeAI(API_KEY);
 
@@ -20,9 +19,9 @@ export interface AnalysisResponse {
 }
 
 export async function analyzeGraduationDocuments(pdfBase64: string): Promise<AnalysisResponse> {
-  // CAMBIO DEFINITIVO: Usamos el nombre base del modelo estable
+  // CAMBIO A GEMINI 2.0 FLASH: Es más rápido y evita el error 404 de la v1beta
   const model = genAI.getGenerativeModel({
-    model: "gemini-1.5-flash", 
+    model: "gemini-2.0-flash", 
     generationConfig: {
       responseMimeType: "application/json",
       responseSchema: {
@@ -54,52 +53,27 @@ export async function analyzeGraduationDocuments(pdfBase64: string): Promise<Ana
     }
   });
 
-  const prompt = `Actúa como un Secretario Académico experto. Analiza este PDF y valida los 12 requisitos de grado:
-  1. Verificación de requisitos (firmas ok).
-  2. Cédula/Pasaporte.
-  3. Derechos de grado ($507.000).
-  4. Estampilla Procultura Bolívar ($62.344).
-  5. Diploma/Acta Bachiller o pregrado.
-  6. Certificado promedio (Firma Estadística).
-  7. Balance académico (Firmado).
-  8. Certificación Inglés (CIEN).
-  9. Saber Pro.
-  10. Formato calificación grado.
-  11. Opción de grado.
-  12. Calificación trabajo de grado (Anexo 2).
-
-  REGLAS:
-  - Extrae el nombre de la cédula.
-  - El estado es "incomplete" si falta alguna firma requerida.
-  - Responde solo el JSON.`;
+  const prompt = `Actúa como Secretario Académico. Analiza este PDF y valida los 12 requisitos:
+  1. Verificación requisitos (firmas). 2. Cédula. 3. Derechos grado ($507.000). 
+  4. Estampilla Bolívar ($62.344). 5. Acta Bachiller/Pregrado. 6. Certificado promedio. 
+  7. Balance académico. 8. Inglés. 9. Saber Pro. 10. Calificación grado. 
+  11. Opción grado. 12. Nota trabajo grado.
+  
+  EXTRACCIÓN: Nombre de la cédula y Programa del certificado de estadística.`;
 
   try {
-    if (!API_KEY) {
-      throw new Error("API Key no encontrada. Revisa tu archivo .env");
-    }
+    if (!API_KEY) throw new Error("API Key no configurada.");
 
-    // Enviamos el PDF a Gemini
     const result = await model.generateContent([
-      {
-        inlineData: {
-          mimeType: "application/pdf",
-          data: pdfBase64,
-        },
-      },
+      { inlineData: { mimeType: "application/pdf", data: pdfBase64 } },
       { text: prompt },
     ]);
 
-    const response = await result.response;
-    return JSON.parse(response.text()) as AnalysisResponse;
+    const text = result.response.text();
+    return JSON.parse(text) as AnalysisResponse;
     
   } catch (error: any) {
-    console.error("Detalle del error:", error);
-    
-    // Si sigue dando 404, intentamos con el modelo 2.0 que es el futuro
-    if (error.message?.includes("404")) {
-        throw new Error("El sistema está actualizándose. Por favor intenta de nuevo en un momento o cambia el modelo a 'gemini-2.0-flash'.");
-    }
-
-    throw new Error("Error en la validación del documento.");
+    console.error("Error detallado:", error);
+    throw new Error("Error al conectar con el verificador. Revisa la consola.");
   }
 }
