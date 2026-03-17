@@ -1,25 +1,18 @@
 import { GoogleGenerativeAI, SchemaType } from "@google/generative-ai";
 
-const API_KEY = import.meta.env.VITE_GEMINI_API_KEY || "";
+// Intentamos obtener la clave con ambos nombres posibles
+const API_KEY = import.meta.env.VITE_GEMINI_API_KEY || import.meta.env.GEMINI_API_KEY || "";
 const genAI = new GoogleGenerativeAI(API_KEY);
-
-export interface VerificationResult {
-  item: string;
-  status: 'present' | 'missing' | 'incomplete';
-  foundValue: string;
-  observations: string;
-  pageRange?: string;
-}
 
 export interface AnalysisResponse {
   personName: string;
   academicProgram: string;
-  checklist: VerificationResult[];
+  checklist: any[];
   additionalDocuments: string[];
 }
 
 export async function analyzeGraduationDocuments(pdfBase64: string): Promise<AnalysisResponse> {
-  // CAMBIO CLAVE: Usamos "gemini-1.5-flash" (sin apellidos) para evitar el 404
+  // MODELO ESTABLE: Usamos gemini-1.5-flash para evitar el error 404 de modelos beta
   const model = genAI.getGenerativeModel({
     model: "gemini-1.5-flash", 
     generationConfig: {
@@ -37,37 +30,33 @@ export async function analyzeGraduationDocuments(pdfBase64: string): Promise<Ana
                 item: { type: SchemaType.STRING },
                 status: { type: SchemaType.STRING, enum: ["present", "missing", "incomplete"] },
                 foundValue: { type: SchemaType.STRING },
-                observations: { type: SchemaType.STRING },
-                pageRange: { type: SchemaType.STRING }
+                observations: { type: SchemaType.STRING }
               },
               required: ["item", "status", "foundValue", "observations"]
             }
           },
-          additionalDocuments: {
-            type: SchemaType.ARRAY,
-            items: { type: SchemaType.STRING }
-          }
+          additionalDocuments: { type: SchemaType.ARRAY, items: { type: SchemaType.STRING } }
         },
         required: ["personName", "academicProgram", "checklist", "additionalDocuments"]
       }
     }
   });
 
-  const prompt = `Actúa como Secretario Académico. Analiza este PDF y valida los 12 requisitos de grado (Cédula, Acta, Estampillas, etc.). Extrae el nombre del estudiante de la cédula.`;
+  const prompt = `Analiza este PDF de grado y extrae: nombre del estudiante, programa y validación de requisitos.`;
 
   try {
-    if (!API_KEY) throw new Error("API Key no configurada.");
+    if (!API_KEY) {
+      throw new Error("ERROR CRÍTICO: No se detectó ninguna API KEY. Verifica que el nombre en Netlify coincida con el código.");
+    }
 
     const result = await model.generateContent([
       { inlineData: { mimeType: "application/pdf", data: pdfBase64 } },
       { text: prompt },
     ]);
 
-    return JSON.parse(result.response.text()) as AnalysisResponse;
-    
+    return JSON.parse(result.response.text());
   } catch (error: any) {
-    console.error("Error:", error);
-    // Si sale 400 o 404, lanzamos un mensaje claro
-    throw new Error("Error de conexión con Gemini. Verifica la API Key y el modelo.");
+    console.error("Detalle técnico:", error);
+    throw new Error(`Fallo en la conexión: ${error.message}`);
   }
 }
