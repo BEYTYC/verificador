@@ -20,10 +20,9 @@ export interface AnalysisResponse {
 }
 
 export async function analyzeGraduationDocuments(pdfBase64: string): Promise<AnalysisResponse> {
-  // CAMBIO CLAVE: Usamos "gemini-1.5-flash" o "gemini-2.0-flash" (el más actual en 2026)
-  // Quitar el "-latest" suele solucionar el error 404 en el endpoint v1beta
+  // CAMBIO CLAVE: Usamos "gemini-1.5-flash-latest" para evitar el error 404
   const model = genAI.getGenerativeModel({
-    model: "gemini-1.5-flash", 
+    model: "gemini-1.5-flash-latest", 
     generationConfig: {
       responseMimeType: "application/json",
       responseSchema: {
@@ -57,29 +56,30 @@ export async function analyzeGraduationDocuments(pdfBase64: string): Promise<Ana
 
   const prompt = `Analiza detalladamente este PDF de documentos de grado. 
 Verifica los siguientes 12 requisitos en este orden:
-1. Formato Verificación de requisitos (firmas decanos y director).
-2. Documento de identidad (legible).
-3. Derechos de grado ($507.000).
-4. Estampilla Bolívar ($62.344).
-5. Diploma o acta (Bachiller para pregrado / Profesional para posgrado).
-6. Certificado promedio (Firma Jefe Estadística).
-7. Balance académico (Firmado y con promedio).
-8. Certificación inglés (Señal CIEN).
-9. Saber Pro (Solo pregrado).
-10. Formato calificación grado (Firmado).
-11. Opción de grado (Certificado facultad).
-12. Evaluación trabajo de grado (Anexo 2 con nota).
+1. Formato Verificación de requisitos (debe tener firmas de decanos y director).
+2. Documento de identidad (cédula o pasaporte, debe ser legible).
+3. Comprobante Derechos de grado ($507.000).
+4. Estampilla Procultura Bolívar ($62.344).
+5. Diploma o acta de grado (Bachiller para pregrado / Profesional para posgrado).
+6. Certificado de promedio académico (Firma Jefe Estadística).
+7. Balance académico (Firmado y con promedio acumulado).
+8. Certificación de idioma inglés (Señalización CIEN).
+9. Resultados Pruebas Saber Pro (Solo obligatorio para pregrado).
+10. Formato calificación de grado (Debe estar firmado).
+11. Certificado opción de trabajo de grado (Certificado por facultad).
+12. Formato calificación trabajo de grado (Anexo 2 con nota numérica).
 
 INSTRUCCIONES CRÍTICAS:
 - Extrae el nombre del estudiante de la CÉDULA (Formato: APELLIDOS Y NOMBRES).
-- Extrae el programa ÚNICAMENTE del certificado de ESTADÍSTICA.
-- Para "foundValue", sigue los ejemplos: "$507.000", "4.2 - FIRMADO", "CÉDULA LEGIBLE".
-- Verifica que la nota del requisito 10 y 12 coincida con lo escrito en el requisito 1. Si no coinciden, marca "incomplete".
-- Para cada documento encontrado, indica el rango de páginas (ej: "1-2", "5").`;
+- Extrae el programa académico ÚNICAMENTE del certificado de ESTADÍSTICA o del BALANCE.
+- En "foundValue", pon datos específicos: "$507.000", "PROMEDIO: 4.2", "CÉDULA 1047...".
+- VALIDACIÓN DE FIRMAS: Si un documento requiere firma y no la tiene, marca status como "incomplete".
+- Si el documento no aparece en el PDF, marca status como "missing".
+- Indica el rango de páginas donde encontraste cada documento (ej: "Página 1", "3-4").`;
 
   try {
     if (!API_KEY) {
-      throw new Error("La API Key 'VITE_GEMINI_API_KEY' no está configurada.");
+      throw new Error("La API Key 'VITE_GEMINI_API_KEY' no está configurada en el archivo .env");
     }
 
     const result = await model.generateContent([
@@ -95,21 +95,21 @@ INSTRUCCIONES CRÍTICAS:
     const response = await result.response;
     const text = response.text();
     
-    // El modelo ya devuelve JSON puro gracias a responseSchema
+    // Convertimos la respuesta de texto a un objeto JSON real
     return JSON.parse(text) as AnalysisResponse;
     
   } catch (error: any) {
     console.error("Error en el servicio Gemini:", error);
     
-    // Si sigue saliendo 404, el modelo podría haberse actualizado a 2.0
+    // Manejo de errores específicos
     if (error.message?.includes("404")) {
-        throw new Error("Error 404: El modelo solicitado no existe. Intenta cambiar 'gemini-1.5-flash' por 'gemini-2.0-flash' en el código.");
+        throw new Error("Error 404: El modelo solicitado no fue encontrado. Verifica la conexión o intenta con 'gemini-2.0-flash'.");
     }
 
-    throw new Error(
-      error.message?.includes("403") 
-        ? "Error 403: API Key inválida o no configurada en Vercel." 
-        : "Error al analizar el documento."
-    );
+    if (error.message?.includes("429")) {
+        throw new Error("Has agotado la cuota gratuita de Gemini por ahora. Espera un minuto.");
+    }
+
+    throw new Error("Error al analizar el documento. Asegúrate de que el PDF sea legible y no sea demasiado pesado.");
   }
 }
