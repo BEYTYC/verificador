@@ -237,7 +237,7 @@ export default function App() {
       for (const fileData of pendingFiles) {
         await analyzeFile(fileData.id, true);
         // Pequeña pausa para evitar saturar la API
-        await new Promise(resolve => setTimeout(resolve, 500));
+        await new Promise(resolve => setTimeout(resolve, 100));
       }
       playSuccessSound();
     } catch (err) {
@@ -486,15 +486,6 @@ export default function App() {
               </button>
             </nav>
 
-            <a 
-              href="https://enap.vercel.app"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="px-8 py-2.5 bg-brand-light text-white font-black text-sm rounded-full hover:bg-white hover:text-dark transition-all shadow-xl shadow-brand-light/20"
-            >
-              Volver al portal
-            </a>
-            
             <button 
               onClick={resetAll}
               className="p-2 text-white/50 hover:text-brand-light transition-colors"
@@ -511,8 +502,13 @@ export default function App() {
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 flex-1">
           
           {/* Sidebar: File List */}
-          <div className="lg:col-span-3">
-            <div className={`bg-box-light rounded-2xl border border-white/10 shadow-2xl flex flex-col sticky top-24 transition-all duration-300 ${files.length === 0 ? 'min-h-[500px]' : 'h-[calc(100vh-180px)] min-h-[500px]'}`}>
+          <motion.div 
+            initial={{ opacity: 0, x: -20 }}
+            animate={{ opacity: 1, x: 0 }}
+            transition={{ duration: 0.5, ease: "easeOut" }}
+            className="lg:col-span-3 sticky top-24 self-start h-[calc(100vh-120px)]"
+          >
+            <div className={`bg-box-light rounded-2xl border border-white/10 shadow-2xl flex flex-col transition-all duration-300 h-full`}>
               <div className="p-4 border-b border-dark/5 bg-dark/5 flex items-center justify-between">
                 <h2 className="text-xs font-bold text-brand uppercase tracking-widest">Anexos ({files.length})</h2>
                 <button 
@@ -538,9 +534,12 @@ export default function App() {
                     <p className="text-xs font-black text-dark/70 uppercase tracking-widest">0 registros cargados</p>
                   </div>
                 ) : (
-                  files.map((f) => (
-                    <div 
+                  files.map((f, index) => (
+                    <motion.div 
                       key={f.id}
+                      initial={{ opacity: 0, y: 10 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      transition={{ delay: index * 0.05 }}
                       onClick={() => setSelectedId(f.id)}
                       className={`
                         group px-3 py-1.5 rounded-md transition-all cursor-pointer flex items-center justify-between border-l-2
@@ -575,7 +574,7 @@ export default function App() {
                       >
                         <Trash2 className="w-2.5 h-2.5" />
                       </button>
-                    </div>
+                    </motion.div>
                   ))
                 )}
               </div>
@@ -607,10 +606,15 @@ export default function App() {
                 </div>
               )}
             </div>
-          </div>
+          </motion.div>
 
           {/* Main Content: Results */}
-          <div className="lg:col-span-9 flex flex-col">
+          <motion.div 
+            initial={{ opacity: 0, x: 20 }}
+            animate={{ opacity: 1, x: 0 }}
+            transition={{ duration: 0.5, ease: "easeOut" }}
+            className="lg:col-span-9 flex flex-col"
+          >
             <AnimatePresence mode="wait">
               {!selectedFile ? (
                 <motion.div 
@@ -694,7 +698,7 @@ export default function App() {
                   <motion.div 
                     initial={{ opacity: 0, y: 20 }}
                     animate={{ opacity: 1, y: 0 }}
-                    className="flex-1 flex flex-col gap-4"
+                    className="flex-1"
                   >
                   {/* Header Info - Compact */}
                   <div className="mb-6">
@@ -702,13 +706,13 @@ export default function App() {
                       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 relative z-10">
                         <div className="flex items-center gap-6">
                           <div className="flex flex-col gap-1">
-                            <p className="text-xs font-normal text-black">
+                            <p className="text-[16px] font-bold text-black">
                               Programa: {selectedFile.result.academicProgram || 'No detectado'}
                             </p>
-                            <p className="text-xs font-normal text-black">
+                            <p className="text-[18px] font-bold text-[#132e89]">
                               Estudiante: {selectedFile.result.personName}
                             </p>
-                            <p className={`text-xs font-normal ${selectedFile.responsible === 'NO HAY RESPONSABLE' ? 'text-rose-600' : 'text-black'}`}>
+                            <p className={`text-[12px] font-normal ${selectedFile.responsible === 'NO HAY RESPONSABLE' ? 'text-rose-600' : 'text-black'}`}>
                               Responsable: {selectedFile.responsible}
                             </p>
                           </div>
@@ -728,36 +732,39 @@ export default function App() {
                   </div>
 
                   {/* Checklist Grid */}
-                  <div className="bg-box-light rounded-2xl border border-white/10 shadow-2xl overflow-hidden flex flex-col flex-1 min-h-0">
-                    <div className="sticky top-0 z-20 px-8 py-4 border-b border-dark/5 bg-white flex items-center justify-between">
-                      <h3 className="font-bold text-[#132e89] text-[18px] font-arial text-left">Verificación de Anexos</h3>
-                      <div className="text-[10px] font-bold text-dark/40 uppercase tracking-widest">
-                        Lo que se encontró
-                      </div>
+                  <div className="bg-box-light rounded-2xl border border-white/10 shadow-2xl overflow-hidden flex flex-col mb-6">
+                    <div className="px-8 py-4 bg-white border-b border-dark/5">
+                      <h3 className="font-bold text-[#132e89] text-[16px] font-arial uppercase tracking-widest">DETALLE DE REQUISITOS</h3>
                     </div>
                     
-                    <div className="flex-1 overflow-y-auto scrollbar-hide divide-y divide-dark/5">
+                    <div className="divide-y divide-dark/5">
                       <div className="divide-y divide-dark/5">
                         {selectedFile.result.checklist.map((item, idx) => (
-                          <div key={idx} className="px-8 py-2 hover:bg-dark/5 transition-all group cursor-default">
+                          <motion.div 
+                            key={idx} 
+                            initial={{ opacity: 0, x: 10 }}
+                            animate={{ opacity: 1, x: 0 }}
+                            transition={{ delay: idx * 0.03 }}
+                            className="px-8 py-2 hover:bg-dark/5 transition-all group cursor-default"
+                          >
                             <div className="flex items-center justify-between gap-5">
                               <div className="flex-1 min-w-0">
-                                <h4 className="text-[12px] font-normal text-black truncate leading-tight">{item.item}</h4>
+                                <h4 className="text-[13px] font-normal text-black truncate leading-tight">{item.item}</h4>
                               </div>
                               <div className="flex items-center gap-4 flex-shrink-0">
                                 <div className="flex items-center gap-3">
-                                  <span className="text-[12px] font-normal text-black tracking-tight">
-                                    {item.foundValue || 'No detectado'}
+                                  <span className={`text-[12px] font-bold uppercase tracking-tight ${item.status === 'present' ? 'text-black' : 'text-rose-600'}`}>
+                                    {item.foundValue ? item.foundValue.toUpperCase() : 'NO DETECTADO'}
                                   </span>
                                   {item.status === 'present' ? (
-                                    <CheckCircle2 className="w-4 h-4 text-emerald-600 drop-shadow-sm" />
+                                    <CheckCircle2 className="w-6 h-6 text-emerald-600 drop-shadow-sm" />
                                   ) : (
-                                    <XCircle className="w-4 h-4 text-rose-600 drop-shadow-sm" />
+                                    <XCircle className="w-6 h-6 text-rose-600 drop-shadow-sm" />
                                   )}
                                 </div>
                               </div>
                             </div>
-                          </div>
+                          </motion.div>
                         ))}
                       </div>
 
@@ -769,7 +776,7 @@ export default function App() {
                               <FilePlus className="w-6 h-6" />
                             </div>
                             <div>
-                              <h3 className="font-bold text-brand text-sm">Anexos Detectados</h3>
+                              <h3 className="font-bold text-brand text-[15px]">Anexos Detectados</h3>
                               <p className="text-[10px] text-dark/40">Documentos adicionales no requeridos en el checklist oficial</p>
                             </div>
                           </div>
@@ -801,16 +808,16 @@ export default function App() {
                 </motion.div>
               )}
             </AnimatePresence>
-          </div>
+          </motion.div>
         </div>
       ) : (
         /* Summary View */
         <motion.div 
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
-          className={`bg-box-light rounded-2xl border border-white/10 shadow-2xl overflow-hidden flex flex-col transition-all duration-300 ${files.length === 0 ? 'h-fit' : 'h-[calc(100vh-180px)]'}`}
+          className="bg-box-light rounded-2xl border border-white/10 shadow-2xl overflow-hidden flex flex-col transition-all duration-300 flex-1 min-h-0"
         >
-          <div className="px-8 py-6 border-b border-dark/5 bg-dark/5 flex items-center">
+          <div className="px-8 py-6 border-b border-dark/5 bg-white flex items-center">
             <h3 className="flex-1 font-bold text-brand uppercase tracking-widest text-sm">RESUMEN GENERAL DE REQUISITOS</h3>
             <div className="w-[16%] flex justify-center">
               <button 
@@ -836,10 +843,10 @@ export default function App() {
             <table className="w-full text-left border-collapse table-fixed">
               <thead>
                 <tr className="bg-dark/5 border-b border-dark/5">
-                  <th className="w-[28%] px-8 py-4 text-[10px] font-black text-dark/40 uppercase tracking-widest">Programa</th>
-                  <th className="w-[28%] px-8 py-4 text-[10px] font-black text-dark/40 uppercase tracking-widest">Estudiante</th>
-                  <th className="w-[28%] px-8 py-4 text-[10px] font-black text-dark/40 uppercase tracking-widest">Responsable</th>
-                  <th className="w-[16%] px-8 py-4 text-[10px] font-black text-dark/40 uppercase tracking-widest text-center">Novedades</th>
+                  <th className="w-[28%] px-8 py-4 text-[12px] font-black text-[#002cb8] uppercase tracking-widest">Programa</th>
+                  <th className="w-[28%] px-8 py-4 text-[12px] font-black text-[#002cb8] uppercase tracking-widest">Estudiante</th>
+                  <th className="w-[28%] px-8 py-4 text-[12px] font-black text-[#002cb8] uppercase tracking-widest">Responsable</th>
+                  <th className="w-[16%] px-8 py-4 text-[12px] font-black text-[#002cb8] uppercase tracking-widest text-center">Novedades</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-dark/5">
@@ -867,20 +874,26 @@ export default function App() {
                     </td>
                   </tr>
                 ) : (
-                  files.map((f) => (
-                    <tr key={f.id} className="hover:bg-dark/5 transition-colors">
+                  files.map((f, index) => (
+                    <motion.tr 
+                      key={f.id} 
+                      initial={{ opacity: 0, y: 10 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      transition={{ delay: index * 0.05 }}
+                      className="hover:bg-dark/5 transition-colors"
+                    >
                       <td className="px-8 py-4">
-                        <span className="text-xs text-dark/60 uppercase block break-words">
+                        <span className="text-[13px] text-black font-normal uppercase block break-words">
                           {f.result ? f.result.academicProgram : 'PENDIENTE'}
                         </span>
                       </td>
                       <td className="px-8 py-4">
-                        <span className="text-xs text-dark font-normal uppercase block break-words">
+                        <span className="text-[13px] text-black font-normal uppercase block break-words">
                           {f.result ? f.result.personName : f.studentName}
                         </span>
                       </td>
                       <td className="px-8 py-4">
-                        <span className={`text-[10px] uppercase block break-words font-medium ${f.responsible === 'NO HAY RESPONSABLE' ? 'text-rose-600' : 'text-dark/40'}`}>
+                        <span className={`text-[13px] uppercase block break-words font-normal ${f.responsible === 'NO HAY RESPONSABLE' ? 'text-rose-600' : 'text-black'}`}>
                           {f.responsible || 'PENDIENTE'}
                         </span>
                       </td>
@@ -899,10 +912,10 @@ export default function App() {
                                 setSelectedId(f.id);
                                 setActiveView('individual');
                               }}
-                              className={`shrink-0 flex items-center gap-1 px-3 py-1 rounded-lg text-[10px] font-bold uppercase tracking-widest transition-all ${
+                              className={`shrink-0 flex items-center gap-1 px-3 py-1 rounded-lg text-[10px] font-bold uppercase tracking-widest transition-all bg-[#f1b5c9] ${
                                 isComplete(f.result) 
-                                  ? 'bg-emerald-600/10 text-emerald-600 hover:bg-emerald-600/20' 
-                                  : 'bg-rose-600/10 text-rose-600 hover:bg-rose-600/20'
+                                  ? 'text-emerald-600 hover:bg-[#f1b5c9]/80' 
+                                  : 'text-rose-600 hover:bg-[#f1b5c9]/80'
                               }`}
                             >
                               {isComplete(f.result) ? 'Sin Novedades' : 'Ver Novedades'}
@@ -913,7 +926,7 @@ export default function App() {
                           )}
                         </div>
                       </td>
-                    </tr>
+                    </motion.tr>
                   ))
                 )}
               </tbody>
@@ -923,7 +936,7 @@ export default function App() {
       )}
       </main>
 
-      <footer className="max-w-[1400px] w-full mx-auto px-6 py-8 flex flex-col items-center justify-center gap-2 text-white/40 text-[9px] font-bold uppercase tracking-[0.2em] bg-transparent">
+      <footer className="max-w-[1400px] w-full mx-auto px-6 py-4 flex flex-col items-center justify-center gap-2 text-white/40 text-[9px] font-bold uppercase tracking-[0.2em] bg-transparent shrink-0">
         <span>© 2016 - OFICINA DE ESTADÍSTICA DE LA ESCUELA NAVAL DE CADETES "ALMIRANTE PADILLA".</span>
       </footer>
     </div>
