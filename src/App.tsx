@@ -12,6 +12,7 @@ import {
   Info,
   Download,
   Files,
+  RotateCcw,
   Trash2,
   Volume2,
   Plus,
@@ -438,7 +439,7 @@ export default function App() {
               <img 
                 src={LOGO_ESCUELA_NAVAL} 
                 alt="Logo Escuela Naval" 
-                className="w-full h-full object-contain drop-shadow-[0_0_2px_rgba(255,255,255,0.8)]"
+                className="w-full h-full object-contain drop-shadow-[0_0_1px_rgba(255,255,255,1)]"
                 referrerPolicy="no-referrer"
               />
             </div>
@@ -485,16 +486,21 @@ export default function App() {
               </button>
             </nav>
 
-            <button className="px-8 py-2.5 bg-brand-light text-white font-black text-sm rounded-full hover:bg-white hover:text-dark transition-all shadow-xl shadow-brand-light/20">
+            <a 
+              href="https://enap.vercel.app"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="px-8 py-2.5 bg-brand-light text-white font-black text-sm rounded-full hover:bg-white hover:text-dark transition-all shadow-xl shadow-brand-light/20"
+            >
               Volver al portal
-            </button>
+            </a>
             
             <button 
               onClick={resetAll}
-              className="p-2 text-white/50 hover:text-rose-400 transition-colors"
+              className="p-2 text-white/50 hover:text-brand-light transition-colors"
               title="Reiniciar"
             >
-              <Trash2 size={18} />
+              <RotateCcw size={18} />
             </button>
           </div>
         </div>
@@ -506,9 +512,9 @@ export default function App() {
           
           {/* Sidebar: File List */}
           <div className="lg:col-span-3">
-            <div className="bg-box-light rounded-2xl border border-white/10 shadow-2xl flex flex-col sticky top-24 h-[calc(100vh-180px)] min-h-[500px]">
+            <div className={`bg-box-light rounded-2xl border border-white/10 shadow-2xl flex flex-col sticky top-24 transition-all duration-300 ${files.length === 0 ? 'min-h-[500px]' : 'h-[calc(100vh-180px)] min-h-[500px]'}`}>
               <div className="p-4 border-b border-dark/5 bg-dark/5 flex items-center justify-between">
-                <h2 className="text-xs font-bold text-brand uppercase tracking-widest">ANEXOS ({files.length})</h2>
+                <h2 className="text-xs font-bold text-brand uppercase tracking-widest">Anexos ({files.length})</h2>
                 <button 
                   onClick={() => fileInputRef.current?.click()}
                   className="p-1.5 bg-brand-light text-dark rounded-lg hover:bg-white transition-all shadow-lg"
@@ -621,9 +627,9 @@ export default function App() {
                     <Upload className="w-8 h-8" />
                   </div>
                   <h3 className={`relative z-10 text-xl font-bold transition-colors duration-300 tracking-tight ${isDragging ? 'text-brand' : 'text-brand group-hover:text-brand'}`}>
-                    {isDragging ? 'Suelte los archivos aquí' : 'GESTIÓN DE ANEXOS'}
+                    {isDragging ? 'Suelte los archivos aquí' : 'Anexos'}
                   </h3>
-                  <p className={`text-xs max-w-xs text-center mt-3 transition-colors duration-300 ${isDragging ? 'text-white/80' : 'text-white/40'}`}>
+                  <p className={`text-xs max-w-xs text-center mt-3 transition-colors duration-300 ${isDragging ? 'text-dark/80' : 'text-dark/60'}`}>
                     {isDragging ? 'Iniciando carga automática...' : 'Haz clic aquí o arrastra tus documentos PDF para comenzar la verificación automática.'}
                   </p>
                   {!isDragging && (
@@ -692,20 +698,19 @@ export default function App() {
                   >
                   {/* Header Info - Compact */}
                   <div className="mb-6">
-                    <div className="bg-box-light rounded-2xl border border-white/10 p-5 shadow-2xl relative overflow-hidden">
+                    <div className="bg-white rounded-2xl border border-white/10 p-5 shadow-2xl relative overflow-hidden">
                       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 relative z-10">
                         <div className="flex items-center gap-6">
-                          <div>
-                            <p className="text-[10px] font-bold text-[#139fdc] uppercase tracking-widest mb-0.5">PROGRAMA ACADÉMICO</p>
-                            <h3 className="text-lg font-black tracking-tight text-brand leading-tight">{selectedFile.result.academicProgram || 'Programa no detectado'}</h3>
-                            <div className="flex flex-col gap-0.5 mt-2">
-                              <span className="text-[11px] font-bold text-dark uppercase">
-                                Estudiante: {selectedFile.result.personName}
-                              </span>
-                              <span className={`text-[10px] font-bold uppercase ${selectedFile.responsible === 'NO HAY RESPONSABLE' ? 'text-rose-600' : 'text-dark/40'}`}>
-                                Responsable: {selectedFile.responsible}
-                              </span>
-                            </div>
+                          <div className="flex flex-col gap-1">
+                            <p className="text-xs font-normal text-black">
+                              Programa: {selectedFile.result.academicProgram || 'No detectado'}
+                            </p>
+                            <p className="text-xs font-normal text-black">
+                              Estudiante: {selectedFile.result.personName}
+                            </p>
+                            <p className={`text-xs font-normal ${selectedFile.responsible === 'NO HAY RESPONSABLE' ? 'text-rose-600' : 'text-black'}`}>
+                              Responsable: {selectedFile.responsible}
+                            </p>
                           </div>
                         </div>
                         
@@ -724,8 +729,8 @@ export default function App() {
 
                   {/* Checklist Grid */}
                   <div className="bg-box-light rounded-2xl border border-white/10 shadow-2xl overflow-hidden flex flex-col flex-1 min-h-0">
-                    <div className="sticky top-0 z-20 px-8 py-4 border-b border-dark/5 bg-box-light flex items-center justify-between">
-                      <h3 className="font-bold text-brand text-sm uppercase tracking-widest">Verificación de Anexos</h3>
+                    <div className="sticky top-0 z-20 px-8 py-4 border-b border-dark/5 bg-white flex items-center justify-between">
+                      <h3 className="font-bold text-[#132e89] text-[18px] font-arial text-left">Verificación de Anexos</h3>
                       <div className="text-[10px] font-bold text-dark/40 uppercase tracking-widest">
                         Lo que se encontró
                       </div>
@@ -737,11 +742,11 @@ export default function App() {
                           <div key={idx} className="px-8 py-2 hover:bg-dark/5 transition-all group cursor-default">
                             <div className="flex items-center justify-between gap-5">
                               <div className="flex-1 min-w-0">
-                                <h4 className="text-[11px] font-bold text-dark uppercase truncate leading-tight">{item.item}</h4>
+                                <h4 className="text-[12px] font-normal text-black truncate leading-tight">{item.item}</h4>
                               </div>
                               <div className="flex items-center gap-4 flex-shrink-0">
                                 <div className="flex items-center gap-3">
-                                  <span className="text-[10px] font-black text-dark uppercase tracking-tight">
+                                  <span className="text-[12px] font-normal text-black tracking-tight">
                                     {item.foundValue || 'No detectado'}
                                   </span>
                                   {item.status === 'present' ? (
@@ -803,7 +808,7 @@ export default function App() {
         <motion.div 
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
-          className="bg-box-light rounded-2xl border border-white/10 shadow-2xl overflow-hidden flex flex-col h-[calc(100vh-180px)]"
+          className={`bg-box-light rounded-2xl border border-white/10 shadow-2xl overflow-hidden flex flex-col transition-all duration-300 ${files.length === 0 ? 'h-fit' : 'h-[calc(100vh-180px)]'}`}
         >
           <div className="px-8 py-6 border-b border-dark/5 bg-dark/5 flex items-center">
             <h3 className="flex-1 font-bold text-brand uppercase tracking-widest text-sm">RESUMEN GENERAL DE REQUISITOS</h3>
@@ -827,7 +832,7 @@ export default function App() {
               </button>
             </div>
           </div>
-          <div className="flex-1 overflow-x-auto overflow-y-auto custom-scrollbar">
+          <div className={`flex-1 overflow-x-auto ${files.length === 0 ? 'overflow-y-hidden' : 'overflow-y-auto custom-scrollbar'}`}>
             <table className="w-full text-left border-collapse table-fixed">
               <thead>
                 <tr className="bg-dark/5 border-b border-dark/5">
@@ -840,12 +845,12 @@ export default function App() {
               <tbody className="divide-y divide-dark/5">
                 {files.length === 0 ? (
                   <tr>
-                    <td colSpan={4} className="px-8 py-32 text-center">
-                      <div className="flex flex-col items-center justify-center gap-4">
+                    <td colSpan={4} className="px-8 py-20 text-center">
+                      <div className="flex flex-col items-center justify-center gap-4 mx-auto w-full">
                         <div className="w-16 h-16 bg-dark/5 rounded-2xl flex items-center justify-center text-dark/20">
                           <Files className="w-8 h-8" />
                         </div>
-                        <div>
+                        <div className="text-center">
                           <p className="text-dark/60 font-bold tracking-widest text-sm">No hay anexos cargados</p>
                           <p className="text-dark/40 text-xs mt-1">Carga archivos en la pestaña de resultados para ver el resumen.</p>
                         </div>
@@ -870,7 +875,7 @@ export default function App() {
                         </span>
                       </td>
                       <td className="px-8 py-4">
-                        <span className="text-xs text-dark font-bold uppercase block break-words">
+                        <span className="text-xs text-dark font-normal uppercase block break-words">
                           {f.result ? f.result.personName : f.studentName}
                         </span>
                       </td>
@@ -918,10 +923,8 @@ export default function App() {
       )}
       </main>
 
-      <footer className="max-w-[1400px] w-full mx-auto px-6 py-4 border-t border-white/5 flex flex-col items-center justify-center gap-2 text-white/40 text-[9px] font-bold uppercase tracking-[0.2em]">
-        <div className="flex items-center gap-4">
-          <span>COPYRIGHT 2026 OFICINA DE ESTADÍSTICA - ESCUELA NAVAL DE CADETES "ALMIRANTE PADILLA"</span>
-        </div>
+      <footer className="max-w-[1400px] w-full mx-auto px-6 py-8 flex flex-col items-center justify-center gap-2 text-white/40 text-[9px] font-bold uppercase tracking-[0.2em] bg-transparent">
+        <span>© 2016 - OFICINA DE ESTADÍSTICA DE LA ESCUELA NAVAL DE CADETES "ALMIRANTE PADILLA".</span>
       </footer>
     </div>
   );

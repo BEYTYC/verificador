@@ -67,6 +67,10 @@
   animation: sparkle 2s ease-in-out infinite;
 }
 
+@utility font-arial {
+  font-family: Arial, sans-serif;
+}
+
 @utility scrollbar-hide {
   -ms-overflow-style: none;
   scrollbar-width: none;
