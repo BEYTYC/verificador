@@ -1,7 +1,7 @@
 import { GoogleGenerativeAI, SchemaType } from "@google/generative-ai";
 
-// Intentamos obtener la clave con ambos nombres posibles
-const API_KEY = import.meta.env.VITE_GEMINI_API_KEY || import.meta.env.GEMINI_API_KEY || "";
+// Vite lee automáticamente las variables que empiezan por VITE_ en Netlify
+const API_KEY = import.meta.env.VITE_GEMINI_API_KEY || "";
 const genAI = new GoogleGenerativeAI(API_KEY);
 
 export interface AnalysisResponse {
@@ -12,7 +12,7 @@ export interface AnalysisResponse {
 }
 
 export async function analyzeGraduationDocuments(pdfBase64: string): Promise<AnalysisResponse> {
-  // MODELO ESTABLE: Usamos gemini-1.5-flash para evitar el error 404 de modelos beta
+  // MODELO ESTABLE: Usamos gemini-1.5-flash para asegurar compatibilidad
   const model = genAI.getGenerativeModel({
     model: "gemini-1.5-flash", 
     generationConfig: {
@@ -42,11 +42,11 @@ export async function analyzeGraduationDocuments(pdfBase64: string): Promise<Ana
     }
   });
 
-  const prompt = `Analiza este PDF de grado y extrae: nombre del estudiante, programa y validación de requisitos.`;
+  const prompt = `Analiza este PDF de grado y extrae el nombre completo del estudiante, el programa académico y valida los requisitos obligatorios.`;
 
   try {
     if (!API_KEY) {
-      throw new Error("ERROR CRÍTICO: No se detectó ninguna API KEY. Verifica que el nombre en Netlify coincida con el código.");
+      throw new Error("API Key no detectada. Verifica que en Netlify se llame VITE_GEMINI_API_KEY");
     }
 
     const result = await model.generateContent([
@@ -56,7 +56,7 @@ export async function analyzeGraduationDocuments(pdfBase64: string): Promise<Ana
 
     return JSON.parse(result.response.text());
   } catch (error: any) {
-    console.error("Detalle técnico:", error);
-    throw new Error(`Fallo en la conexión: ${error.message}`);
+    console.error("Error en el servicio:", error);
+    throw new Error(`Error de conexión: ${error.message}`);
   }
 }
